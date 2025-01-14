@@ -73,7 +73,7 @@ client.on('interactionCreate', async (interaction) => {
         model: 'gpt-3.5-turbo',  // Ensure you are using the correct model
         messages: [
           { role: 'system', content: 'You are a helpful assistant.' },
-          { role: 'user', content: `Roast the fictional character "${characterName}" humorously. Be light but a tad mean.` }
+          { role: 'user', content: `Roast the fictional character "${characterName}" humorously. Be light but a tad mean. Make it short and mock him in the style of gen z.` }
         ]
       });
 
