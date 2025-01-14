@@ -16,8 +16,8 @@ const client = new Client({
   ],
 });
 
-const token = process.env.BOT_TOKEN;
-const clientId = process.env.CLIENT_ID;
+const token = process.env.MUDAE_BOT_TOKEN;
+const clientId = process.env.MUDAE_CLIENT_ID;
 
 // Registering Slash Command
 const commands = [
