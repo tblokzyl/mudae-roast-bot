@@ -19,11 +19,14 @@ const client = new Client({
 const token = process.env.MUDAE_BOT_TOKEN;
 const clientId = process.env.MUDAE_CLIENT_ID;
 
-// Registering Slash Command
+// Registering Slash Commands
 const commands = [
   new SlashCommandBuilder()
     .setName('roast')
     .setDescription('Roast a character in a humorous way!'),
+  new SlashCommandBuilder()
+    .setName('glaze')
+    .setDescription('Praise how amazing a character is!'),
 ];
 
 const rest = new REST({ version: '10' }).setToken(token);
@@ -47,18 +50,15 @@ client.once('ready', () => {
 client.login(token);
 
 client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isCommand() || interaction.commandName !== 'roast') return;
+  if (!interaction.isCommand() || !['roast', 'glaze'].includes(interaction.commandName)) return;
 
   try {
-    // Acknowledge the interaction early by deferring the reply
-    await interaction.deferReply();
-
     // Fetch the latest message in the channel with an embed
     const messages = await interaction.channel.messages.fetch({ limit: 10 });
     const embedMessage = messages.find(msg => msg.embeds.length > 0);
-    
+
     if (!embedMessage) {
-      return interaction.editReply({ content: 'Could not find any recent message with an embed to roast!' });
+      return interaction.reply({ content: 'Could not find any recent message with an embed to analyze!' });
     }
 
     const embed = embedMessage.embeds[0];
@@ -69,22 +69,28 @@ client.on('interactionCreate', async (interaction) => {
     console.log('Character Name:', characterName);
 
     if (!characterName) {
-      return interaction.editReply({ content: 'Could not find a character name in the embed!' });
+      return interaction.reply({ content: 'Could not find a character name in the embed!' });
     }
 
-    // Generate the roast using OpenAI
+    // Decide prompt based on command
+    const prompt =
+      interaction.commandName === 'roast'
+        ? `Roast the fictional character "${characterName}" from the show "${showName}" humorously. Be light but a tad mean. Make it short and mock them in the style of gen z. Don't use hashtags those are cringe.`
+        : `Praise the fictional character "${characterName}" from the show "${showName}" as if they are the most amazing being ever. Be over-the-top, heartfelt, and funny.`;
+
+    // Generate the response using OpenAI
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         { role: 'system', content: 'You are a helpful assistant.' },
-        { role: 'user', content: `Roast the fictional character "${characterName}" from the show "${showName}" humorously. Be light but a tad mean. Make it short and mock them in the style of gen z. Don't use hashtags those are cringe.` }
-      ]
+        { role: 'user', content: prompt },
+      ],
     });
 
-    const roast = response.choices[0].message.content.trim();
-    return interaction.editReply({ content: roast });
+    const result = response.choices[0].message.content.trim();
+    return interaction.reply({ content: result });
   } catch (error) {
     console.error('Error handling interaction:', error);
-    return interaction.editReply({ content: 'An error occurred while processing your request. Please try again later.' });
+    return interaction.reply({ content: 'An error occurred while processing your request. Please try again later.' });
   }
 });
