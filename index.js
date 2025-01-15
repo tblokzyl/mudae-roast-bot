@@ -53,32 +53,34 @@ client.on('interactionCreate', async (interaction) => {
   if (!interaction.isCommand() || !['roast', 'glaze'].includes(interaction.commandName)) return;
 
   try {
+    // Defer reply immediately to avoid timeout
+    await interaction.deferReply();
+
     // Fetch the latest message in the channel with an embed
     const messages = await interaction.channel.messages.fetch({ limit: 10 });
     const embedMessage = messages.find(msg => msg.embeds.length > 0);
 
     if (!embedMessage) {
-      return interaction.reply({ content: 'Could not find any recent message with an embed to analyze!' });
+      return interaction.editReply('Could not find any recent message with an embed to analyze!');
     }
 
+    // Extract data from the embed
     const embed = embedMessage.embeds[0];
     const description = embed.description || '';
-    const showName = description.split('\n')[0] || 'Unknown Show'; // Grab the first line as show name
+    const showName = description.split('\n')[0] || 'Unknown Show'; // First line as show name
     const characterName = embed.author?.name || embed.title || embed.fields?.[0]?.value || embed.description || 'Unknown Character';
-    console.log('Show Name:', showName);
-    console.log('Character Name:', characterName);
 
     if (!characterName) {
-      return interaction.reply({ content: 'Could not find a character name in the embed!' });
+      return interaction.editReply('Could not find a character name in the embed!');
     }
 
-    // Decide prompt based on command
+    // Generate the OpenAI prompt based on the command
     const prompt =
       interaction.commandName === 'roast'
         ? `Roast the fictional character "${characterName}" from the show "${showName}" humorously. Be light but a tad mean. Make it short and mock them in the style of gen z. Don't use hashtags those are cringe.`
         : `Praise the fictional character "${characterName}" from the show "${showName}" as if they are the most amazing being ever. Be over-the-top, heartfelt, and funny.`;
 
-    // Generate the response using OpenAI
+    // Generate response using OpenAI
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
@@ -88,9 +90,17 @@ client.on('interactionCreate', async (interaction) => {
     });
 
     const result = response.choices[0].message.content.trim();
-    return interaction.reply({ content: result });
+    return interaction.editReply(result);
   } catch (error) {
     console.error('Error handling interaction:', error);
-    return interaction.reply({ content: 'An error occurred while processing your request. Please try again later.' });
+
+    // Handle errors gracefully
+    if (interaction.deferred || interaction.replied) {
+      // Interaction was acknowledged, edit the reply
+      return interaction.editReply('An error occurred while processing your request. Please try again later.');
+    } else {
+      // Interaction not acknowledged, reply normally
+      return interaction.reply({ content: 'An error occurred while processing your request. Please try again later.', ephemeral: true });
+    }
   }
 });
