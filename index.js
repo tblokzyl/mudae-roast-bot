@@ -78,7 +78,7 @@ client.on('interactionCreate', async (interaction) => {
     const prompt =
       interaction.commandName === 'roast'
         ? `Roast the fictional character "${characterName}" from the show "${showName}" humorously. Be light but a tad mean. Make it short and mock them in the style of gen z. Don't use hashtags those are cringe.`
-        : `Praise the fictional character "${characterName}" from the show "${showName}" as if they are the most amazing being ever. Be over-the-top, heartfelt, and funny. Make it short and mock them in the style of gen z. Make it two to four sentences at most.`;
+        : `Praise the fictional character "${characterName}" from the show "${showName}" as if they are the most amazing being ever. Be heartfelt, and funny. Make it short in the style of gen z. Make it two to four sentences at most.`;
 
     // Generate response using OpenAI
     const response = await openai.chat.completions.create({
